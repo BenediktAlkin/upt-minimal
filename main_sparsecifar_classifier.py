@@ -4,16 +4,15 @@ import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
-from torchvision.datasets import CIFAR10
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
 from upt.models.approximator import Approximator
 from upt.models.decoder_classifier import DecoderClassifier
 from upt.models.encoder_supernodes import EncoderSupernodes
-from upt.models.upt_image_classifier import UPTImageClassifier
+from upt.models.upt_sparseimage_classifier import UPTSparseImageClassifier
 from upt.datasets.sparse_cifar10 import SparseCIFAR10
-from upt.upt_collator import UPTCollator
+from upt.collators.sparseimage_collator import SparseImageCollator
 
 def main():
     # initialize device
@@ -33,7 +32,7 @@ def main():
     batch_size = 256
 
     # initialize model
-    model = UPTImageClassifier(
+    model = UPTSparseImageClassifier(
         encoder=EncoderSupernodes(
             # CIFAR has 3 channels (RGB)
             input_dim=3,
@@ -91,12 +90,12 @@ def main():
         batch_size=batch_size,
         shuffle=True,
         drop_last=True,
-        collate_fn=UPTCollator(num_supernodes=64, deterministic=False),
+        collate_fn=SparseImageCollator(num_supernodes=64, deterministic=False),
     )
     test_dataloader = DataLoader(
         dataset=test_dataset,
         batch_size=batch_size,
-        collate_fn=UPTCollator(num_supernodes=64, deterministic=True),
+        collate_fn=SparseImageCollator(num_supernodes=64, deterministic=True),
     )
 
     # initialize optimizer and learning rate schedule (linear warmup for first 10% -> linear decay)
@@ -124,17 +123,19 @@ def main():
     for _ in range(epochs):
         # train for an epoch
         model.train()
-        for x, y in train_dataloader:
-            # prepare forward pass
-            x = x.to(device)
-            y = y.to(device)
-
+        for batch in train_dataloader:
             # schedule learning rate
             for param_group in optim.param_groups:
                 param_group["lr"] = lrs[update]
 
             # forward pass
-            y_hat = model(x)
+            y_hat = model(
+                input_feat=batch["input_feat"].to(device),
+                input_pos=batch["input_pos"].to(device),
+                supernode_idxs=batch["supernode_idxs"].to(device),
+                batch_idx=batch["batch_idx"].to(device),
+            )
+            y = batch["target_class"].to(device)
             loss = F.cross_entropy(y_hat, y)
 
             # backward pass
