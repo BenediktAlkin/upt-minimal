@@ -27,7 +27,7 @@ def main():
         train=True,
         download=True,
         transform=transform,
-        num_inputs=1024,
+        num_inputs=512,
     )
     test_dataset = SparseCIFAR10(
         root=data_root,
