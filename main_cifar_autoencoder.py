@@ -1,22 +1,23 @@
 from pathlib import Path
 
+import einops
 import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
 from torchvision.datasets import CIFAR10
-from torchvision.transforms import Compose, Normalize, ToTensor
+from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
 from upt.models.approximator import Approximator
-from upt.models.decoder_classifier import DecoderClassifier
+from upt.models.decoder_perceiver import DecoderPerceiver
 from upt.models.encoder_image import EncoderImage
-from upt.models.upt_image_classifier import UPTImageClassifier
+from upt.models.upt_image_autoencoder import UPTImageAutoencoder
 
 
 def main():
     # initialize device
-    device = torch.device("cuda")
+    device = torch.device("cpu")
 
     # initialize dataset
     data_root = Path("./data")
@@ -26,13 +27,13 @@ def main():
     test_dataset = CIFAR10(root=data_root, train=False, download=True, transform=transform)
 
     # hyperparameters
-    dim = 192  # ~6M parameter model
+    dim = 6  # ~6M parameter model
     num_heads = 3
     epochs = 10
     batch_size = 256
 
     # initialize model
-    model = UPTImageClassifier(
+    model = UPTImageAutoencoder(
         encoder=EncoderImage(
             # CIFAR has 3 channels (RGB)
             input_dim=3,
@@ -58,16 +59,18 @@ def main():
             # ViT-T has 12 blocks -> parameters are split evenly among encoder/approximator/decoder
             depth=4,
         ),
-        decoder=DecoderClassifier(
+        decoder=DecoderPerceiver(
             # tell the decoder the dimension of the input (dim of approximator)
             input_dim=dim,
-            # CIFAR10 has 10 classes
-            num_classes=10,
+            # images have 2D coordinates
+            ndim=2,
             # as in ViT-T
             dim=dim,
             num_heads=num_heads,
             # ViT-T has 12 blocks -> parameters are split evenly among encoder/approximator/decoder
             depth=4,
+            # reshape to image after decoding
+            unbatch_mode="image",
         ),
     )
     model = model.to(device)
@@ -91,30 +94,45 @@ def main():
         ],
     )
 
+    # query positions are fixed for training, we query on a regular grid
+    # CIFAR has 32x32 pixels
+    # query pos will be a tensor of shape (32 * 32, 2) with and will contain x and y indices
+    # output_pos[0] = [0, 0]
+    # output_pos[1] = [0, 1]
+    # output_pos[2] = [0, 2]
+    # ...
+    # output_pos[32] = [1, 0]
+    # output_pos[1024] = [31, 31]
+    output_pos = einops.rearrange(
+        torch.stack(torch.meshgrid([torch.arange(32), torch.arange(32)], indexing="ij")),
+        "ndim height width -> (height width) ndim",
+    )
+    output_pos = output_pos.to(device)
+    # decoder needs float dtype
+    output_pos = output_pos.float()
+
     # train model
     update = 0
     pbar = tqdm(total=total_updates)
     pbar.update(0)
-    pbar.set_description("train_loss: ????? train_accuracy: ????% test_accuracy: ????%")
-    test_accuracy = 0.0
+    pbar.set_description("train_loss: ????? test_loss. ?????")
     train_losses = []
-    train_accuracies = []
-    test_accuracies = []
+    test_losses = []
+    test_loss = float("inf")
     for _ in range(epochs):
         # train for an epoch
         model.train()
-        for x, y in train_dataloader:
+        for x, _ in train_dataloader:
             # prepare forward pass
             x = x.to(device)
-            y = y.to(device)
 
             # schedule learning rate
             for param_group in optim.param_groups:
                 param_group["lr"] = lrs[update]
 
             # forward pass
-            y_hat = model(x)
-            loss = F.cross_entropy(y_hat, y)
+            x_hat = model(x, output_pos=einops.repeat(output_pos, "... -> bs ...", bs=len(x)))
+            loss = F.mse_loss(x_hat, x)
 
             # backward pass
             loss.backward()
@@ -124,48 +142,38 @@ def main():
             optim.zero_grad()
 
             # status update
-            train_accuracy = (y_hat.argmax(dim=1) == y).sum() / y.numel()
             update += 1
             pbar.update()
             pbar.set_description(
                 f"train_loss: {loss.item():.4f} "
-                f"train_accuracy: {train_accuracy * 100:4.1f}% "
-                f"test_accuracy: {test_accuracy * 100:4.1f}%"
+                f"test_loss: {test_loss:.4f} "
             )
             train_losses.append(loss.item())
-            train_accuracies.append(train_accuracy)
 
         # evaluate
-        num_correct = 0
-        for x, y in test_dataloader:
+        test_loss = 0.
+        for x, _ in test_dataloader:
             x = x.to(device)
-            y = y.to(device)
-            y_hat = model(x)
-            num_correct += (y_hat.argmax(dim=1) == y).sum().item()
-        test_accuracy = num_correct / len(test_dataset)
-        test_accuracies.append(test_accuracy)
+            x_hat = model(x)
+            test_loss += F.mse_loss(x_hat, x, reduction="none").flatten(start_dim=1).mean(dim=1).sum().item()
+        test_loss /= len(test_dataset)
+        test_losses.append(test_loss)
         pbar.set_description(
             f"train_loss: {loss.item():.4f} "
-            f"train_accuracy: {train_accuracy * 100:4.1f}% "
-            f"test_accuracy: {test_accuracy * 100:4.1f}%"
+            f"test_loss: {test_loss:.4f} "
         )
 
-    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5))
     axes[0].plot(range(len(train_losses)), train_losses)
     axes[0].set_xlabel("Updates")
     axes[0].set_ylabel("Train Loss")
     axes[0].legend()
     axes[0].grid(True)
-    axes[1].plot(range(len(train_accuracies)), train_accuracies)
+    axes[1].plot(range(len(test_losses)), test_losses)
     axes[1].set_xlabel("Updates")
-    axes[1].set_ylabel("Train Accuracy")
+    axes[1].set_ylabel("Test Loss")
     axes[1].legend()
     axes[1].grid(True)
-    axes[2].plot(range(len(test_accuracies)), test_accuracies, marker="o")
-    axes[2].set_xlabel("Epochs")
-    axes[2].set_ylabel("Test Accuracy")
-    axes[2].legend()
-    axes[2].grid(True)
     plt.tight_layout()
     plt.show()
 

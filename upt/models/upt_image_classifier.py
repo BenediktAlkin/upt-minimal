@@ -1,7 +1,7 @@
 from torch import nn
 
 
-class UPTClassifier(nn.Module):
+class UPTImageClassifier(nn.Module):
     def __init__(self, encoder, approximator, decoder):
         super().__init__()
         self.encoder = encoder

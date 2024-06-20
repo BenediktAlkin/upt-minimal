@@ -6,7 +6,7 @@ from kappamodules.layers import ContinuousSincosEmbed, LinearProjection, Sequent
 from kappamodules.transformer import PerceiverBlock, DitPerceiverBlock, DitBlock
 from kappamodules.vit import VitBlock
 from torch import nn
-from torch_geometric.utils import unbatch
+import math
 
 
 class DecoderPerceiver(nn.Module):
@@ -20,6 +20,7 @@ class DecoderPerceiver(nn.Module):
             perc_dim=None,
             perc_num_heads=None,
             cond_dim=None,
+            unbatch_mode="sparse",
             init_weights="truncnormal002",
             **kwargs,
     ):
@@ -35,6 +36,7 @@ class DecoderPerceiver(nn.Module):
         self.perc_num_heads = perc_num_heads
         self.cond_dim = cond_dim
         self.init_weights = init_weights
+        self.unbatch_mode = unbatch_mode
 
         # input projection
         self.input_proj = LinearProjection(input_dim, dim, init_weights=init_weights, optional=True)
@@ -108,13 +110,28 @@ class DecoderPerceiver(nn.Module):
 
         x = self.perc(q=query, kv=x, **cond_kwargs)
         x = self.pred(x)
-        # dense tensor (batch_size, max_num_points, dim) -> sparse tensor (batch_size * num_points, dim)
-        hat = einops.rearrange(x, "batch_size max_num_points dim -> (batch_size max_num_points) dim")
-        if unbatch_idx is None:
-            # with batch_size=1 no padding is needed --> no unbatching is needed
-            assert len(output_pos) == 1
+        if self.unbatch_mode == "sparse":
+            # dense tensor (batch_size, max_num_points, dim) -> sparse tensor (batch_size * num_points, dim)
+            x = einops.rearrange(x, "batch_size max_num_points dim -> (batch_size max_num_points) dim")
+            if unbatch_idx is None:
+                # with batch_size=1 no padding is needed --> no unbatching is needed
+                assert len(output_pos) == 1
+            else:
+                # imported here to avoid having to install torch_geometric for images
+                from torch_geometric.utils import unbatch
+                unbatched = unbatch(x, batch=unbatch_idx)
+                x = torch.concat([unbatched[i] for i in unbatch_select])
+        elif self.unbatch_mode == "image":
+            # rearrange to square image
+            assert unbatch_idx is None and unbatch_select is None
+            height = math.sqrt(x.size(1))
+            assert height.is_integer()
+            x = einops.rearrange(
+                x,
+                "batch_size (height width) dim -> batch_size dim height width",
+                height=int(height),
+            )
         else:
-            unbatched = unbatch(hat, batch=unbatch_idx)
-            hat = torch.concat([unbatched[i] for i in unbatch_select])
+            raise NotImplementedError(f"invalid unbatch_mode '{self.unbatch_mode}'")
 
-        return hat
+        return x
