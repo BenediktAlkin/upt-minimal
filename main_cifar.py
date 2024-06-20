@@ -68,6 +68,8 @@ def main():
         ),
     )
     model = model.to(device)
+    print(model)
+    print(f"parameters: {sum(p.numel() for p in model.parameters()) / 1e6:.1f}M")
 
     # setup dataloaders
     train_dataloader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True, drop_last=True)
@@ -118,7 +120,7 @@ def main():
             # status update
             train_accuracy = (y_hat.argmax(dim=1) == y).sum() / y.numel()
             update += 1
-            pbar.update(update)
+            pbar.update()
             pbar.set_description(
                 f"train loss: {loss.item():.4f} "
                 f"train accuracy: {train_accuracy * 100:4.1f}% "
