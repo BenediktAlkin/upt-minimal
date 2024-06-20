@@ -22,8 +22,20 @@ def main():
     data_root = Path("./data")
     data_root.mkdir(exist_ok=True)
     transform = ToTensor()
-    train_dataset = SparseCIFAR10(root=data_root, train=True, download=True, transform=transform)
-    test_dataset = SparseCIFAR10(root=data_root, train=False, download=True, transform=transform)
+    train_dataset = SparseCIFAR10(
+        root=data_root,
+        train=True,
+        download=True,
+        transform=transform,
+        num_inputs=1024,
+    )
+    test_dataset = SparseCIFAR10(
+        root=data_root,
+        train=False,
+        download=True,
+        transform=transform,
+        num_inputs=1024,
+    )
 
     # hyperparameters
     dim = 192  # ~6M parameter model
