@@ -23,7 +23,7 @@ def main():
     test_dataset = CIFAR10(root=data_root, train=False, download=True, transform=transform)
 
     # hyperparameters
-    dim = 6  # ~6M parameter model
+    dim = 192  # ~6M parameter model
     num_heads = 3
     epochs = 100
     batch_size = 256
