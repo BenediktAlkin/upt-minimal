@@ -11,7 +11,7 @@ from upt.models.approximator import Approximator
 from upt.models.decoder_classifier import DecoderClassifier
 from upt.models.encoder_supernodes import EncoderSupernodes
 from upt.models.upt_sparseimage_classifier import UPTSparseImageClassifier
-from upt.datasets.sparse_cifar10_classifier_dataset import SparseCifar10ClassifierDataset
+from upt.datasets.sparse_cifar10_autoencoder_dataset import SparseCifar10AutoencoderDataset
 from upt.collators.sparseimage_classifier_collator import SparseImageClassifierCollator
 
 def main():
@@ -22,21 +22,24 @@ def main():
     data_root = Path("./data")
     data_root.mkdir(exist_ok=True)
     transform = ToTensor()
-    train_dataset = SparseCifar10ClassifierDataset(
+    train_dataset = SparseCifar10AutoencoderDataset(
         root=data_root,
         train=True,
         download=True,
         transform=transform,
         # use half of the inputs for training (32x32 pixels = 1024)
         num_inputs=512,
+        # use 3/4th of the outputs for training (32x32 pixels = 1024)
+        num_outputs=768,
     )
-    test_dataset = SparseCifar10ClassifierDataset(
+    test_dataset = SparseCifar10AutoencoderDataset(
         root=data_root,
         train=False,
         download=True,
         transform=transform,
-        # use all inputs for evaluation (32x32 pixels = 1024)
+        # use all inputs/outputs for evaluation (32x32 pixels = 1024)
         num_inputs=1024,
+        num_outputs=1024,
     )
 
     # hyperparameters

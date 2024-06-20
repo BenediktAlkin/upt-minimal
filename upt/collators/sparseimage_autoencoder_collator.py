@@ -49,7 +49,9 @@ class SparseImageAutoencoderCollator:
             cur_batch_idx += 1
         collated_batch["batch_idx"] = batch_idx
 
-        # targets can be collated normally
-        collated_batch["target_class"] = default_collate([batch[i]["target_class"] for i in range(len(batch))])
+        # TODO
+        raise NotImplementedError
+        # output_pos
+        # collated_batch["output_pos"] = default_collate([batch[i]["output_pos"] for i in range(len(batch))])
 
         return collated_batch
