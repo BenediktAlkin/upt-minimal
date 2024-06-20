@@ -159,10 +159,14 @@ def main():
 
         # evaluate
         num_correct = 0
-        for x, y in test_dataloader:
-            x = x.to(device)
-            y = y.to(device)
-            y_hat = model(x)
+        for batch in test_dataloader:
+            y_hat = model(
+                input_feat=batch["input_feat"].to(device),
+                input_pos=batch["input_pos"].to(device),
+                supernode_idxs=batch["supernode_idxs"].to(device),
+                batch_idx=batch["batch_idx"].to(device),
+            )
+            y = batch["target_class"].to(device)
             num_correct += (y_hat.argmax(dim=1) == y).sum().item()
         test_accuracy = num_correct / len(test_dataset)
         test_accuracies.append(test_accuracy)
