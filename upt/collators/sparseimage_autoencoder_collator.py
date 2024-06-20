@@ -1,7 +1,7 @@
 import torch
 from torch.utils.data import default_collate
 
-class SparseImageCollator:
+class SparseImageAutoencoderCollator:
     def __init__(self, num_supernodes, deterministic):
         self.num_supernodes = num_supernodes
         self.deterministic = deterministic
@@ -51,6 +51,5 @@ class SparseImageCollator:
 
         # targets can be collated normally
         collated_batch["target_class"] = default_collate([batch[i]["target_class"] for i in range(len(batch))])
-        collated_batch["target_image"] = default_collate([batch[i]["target_image"] for i in range(len(batch))])
 
         return collated_batch

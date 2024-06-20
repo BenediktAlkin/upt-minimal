@@ -11,8 +11,8 @@ from upt.models.approximator import Approximator
 from upt.models.decoder_classifier import DecoderClassifier
 from upt.models.encoder_supernodes import EncoderSupernodes
 from upt.models.upt_sparseimage_classifier import UPTSparseImageClassifier
-from upt.datasets.sparse_cifar10 import SparseCIFAR10
-from upt.collators.sparseimage_collator import SparseImageCollator
+from upt.datasets.sparse_cifar10_classifier_dataset import SparseCifar10ClassifierDataset
+from upt.collators.sparseimage_classifier_collator import SparseImageClassifierCollator
 
 def main():
     # initialize device
@@ -22,14 +22,14 @@ def main():
     data_root = Path("./data")
     data_root.mkdir(exist_ok=True)
     transform = ToTensor()
-    train_dataset = SparseCIFAR10(
+    train_dataset = SparseCifar10ClassifierDataset(
         root=data_root,
         train=True,
         download=True,
         transform=transform,
         num_inputs=512,
     )
-    test_dataset = SparseCIFAR10(
+    test_dataset = SparseCifar10ClassifierDataset(
         root=data_root,
         train=False,
         download=True,
@@ -102,12 +102,12 @@ def main():
         batch_size=batch_size,
         shuffle=True,
         drop_last=True,
-        collate_fn=SparseImageCollator(num_supernodes=64, deterministic=False),
+        collate_fn=SparseImageClassifierCollator(num_supernodes=64, deterministic=False),
     )
     test_dataloader = DataLoader(
         dataset=test_dataset,
         batch_size=batch_size,
-        collate_fn=SparseImageCollator(num_supernodes=64, deterministic=True),
+        collate_fn=SparseImageClassifierCollator(num_supernodes=64, deterministic=True),
     )
 
     # initialize optimizer and learning rate schedule (linear warmup for first 10% -> linear decay)
