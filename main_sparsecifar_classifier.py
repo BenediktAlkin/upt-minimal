@@ -16,7 +16,7 @@ from upt.collators.sparseimage_collator import SparseImageCollator
 
 def main():
     # initialize device
-    device = torch.device("cpu")
+    device = torch.device("cuda")
 
     # initialize dataset
     data_root = Path("./data")
