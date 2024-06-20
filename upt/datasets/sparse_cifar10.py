@@ -4,7 +4,7 @@ from torchvision.datasets import CIFAR10
 
 
 class SparseCIFAR10(CIFAR10):
-    def __init__(self, root, train=True, transform=None, download=False, num_inputs=256):
+    def __init__(self, root, num_inputs, train=True, transform=None, download=False):
         super().__init__(
             root=root,
             train=train,
