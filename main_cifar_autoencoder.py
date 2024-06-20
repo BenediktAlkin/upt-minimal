@@ -94,9 +94,9 @@ def main():
         ],
     )
 
-    # query positions are fixed for training, we query on a regular grid
+    # output positions are fixed for training, we query on a regular grid
     # CIFAR has 32x32 pixels
-    # query pos will be a tensor of shape (32 * 32, 2) with and will contain x and y indices
+    # output_pos will be a tensor of shape (32 * 32, 2) with and will contain x and y indices
     # output_pos[0] = [0, 0]
     # output_pos[1] = [0, 1]
     # output_pos[2] = [0, 2]
@@ -108,6 +108,8 @@ def main():
         "ndim height width -> (height width) ndim",
     )
     output_pos = output_pos.to(device)
+    # convert output_pos from [0, 31] to [0, 1000] for better behavior with sin-cos pos embeddings
+    output_pos = output_pos / 31 * 1000
     # decoder needs float dtype
     output_pos = output_pos.float()
 
