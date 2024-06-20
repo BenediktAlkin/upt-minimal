@@ -13,7 +13,7 @@ from pathlib import Path
 
 def main():
     # initialize device
-    device = torch.device("cpu")
+    device = torch.device("cuda")
 
     # initialize dataset
     data_root = Path("./data")
