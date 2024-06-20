@@ -41,7 +41,7 @@ class SparseCifar10AutoencoderDataset(CIFAR10):
         self.output_pos = self.output_pos / 31 * 1000
 
     def __getitem__(self, idx):
-        image, y = super().__getitem__(idx)
+        image, _ = super().__getitem__(idx)
         assert image.shape == (3, 32, 32)
         # reshape image to sparse tensor
         x = einops.rearrange(image, "dim height width -> (height width) dim")
@@ -77,8 +77,6 @@ class SparseCifar10AutoencoderDataset(CIFAR10):
             index=idx,
             input_feat=input_feat,
             input_pos=input_pos,
-            target_class=y,
             target_feat=target_feat,
             output_pos=output_pos,
-            dense_image=image,
         )
