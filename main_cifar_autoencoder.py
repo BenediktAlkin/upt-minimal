@@ -17,7 +17,7 @@ from upt.models.upt_image_autoencoder import UPTImageAutoencoder
 
 def main():
     # initialize device
-    device = torch.device("cpu")
+    device = torch.device("cuda")
 
     # initialize dataset
     data_root = Path("./data")
@@ -27,7 +27,7 @@ def main():
     test_dataset = CIFAR10(root=data_root, train=False, download=True, transform=transform)
 
     # hyperparameters
-    dim = 6  # ~6M parameter model
+    dim = 192  # ~6M parameter model
     num_heads = 3
     epochs = 10
     batch_size = 256
