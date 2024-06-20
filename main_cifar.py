@@ -1,3 +1,6 @@
+from pathlib import Path
+
+import matplotlib.pyplot as plt
 import torch
 import torch.nn.functional as F
 from torch.utils.data import DataLoader
@@ -9,7 +12,8 @@ from upt.models.approximator import Approximator
 from upt.models.decoder_classifier import DecoderClassifier
 from upt.models.encoder_image import EncoderImage
 from upt.models.upt_classifier import UPTClassifier
-from pathlib import Path
+import matplotlib.pyplot as plt
+
 
 def main():
     # initialize device
@@ -94,6 +98,9 @@ def main():
     pbar.update(0)
     pbar.set_description("train loss: ????? train accuracy: ????% test_accuracy: ????%")
     test_accuracy = 0.0
+    train_losses = []
+    train_accuracies = []
+    test_accuracies = []
     for _ in range(epochs):
         # train for an epoch
         model.train()
@@ -126,7 +133,8 @@ def main():
                 f"train accuracy: {train_accuracy * 100:4.1f}% "
                 f"test_accuracy: {test_accuracy * 100:4.1f}%"
             )
-
+            train_losses.append(loss.item())
+            train_accuracies.append(train_accuracy)
 
         # evaluate
         num_correct = 0
@@ -136,11 +144,35 @@ def main():
             y_hat = model(x)
             num_correct += (y_hat.argmax(dim=1) == y).sum().item()
         test_accuracy = num_correct / len(test_dataset)
+        test_accuracies.append(test_accuracy)
         pbar.set_description(
             f"train loss: {loss.item():.4f} "
             f"train accuracy: {train_accuracy * 100:4.1f}% "
             f"test_accuracy: {test_accuracy * 100:4.1f}%"
         )
+
+    fig, axes = plt.subplots(1, 3, figsize=(18, 5))
+    axes[0].plot(range(len(train_losses)), train_losses)
+    axes[0].set_xlabel("Updates")
+    axes[0].set_ylabel("Loss")
+    axes[0].set_title("Train Loss")
+    axes[0].legend()
+    axes[0].grid(True)
+    axes[1].plot(range(len(train_accuracies)), train_accuracies, label="Train Accuracy")
+    axes[1].set_xlabel("Updates")
+    axes[1].set_ylabel("Accuracy")
+    axes[1].set_title("Train Accuracy")
+    axes[1].legend()
+    axes[1].grid(True)
+    axes[2].plot(range(len(test_accuracies)), test_accuracies, marker="o", label="Test Accuracy")
+    axes[2].set_xlabel("Epochs")
+    axes[2].set_ylabel("Accuracy")
+    axes[2].set_title("Test Accuracy")
+    axes[2].legend()
+    axes[2].grid(True)
+    plt.tight_layout()
+    plt.show()
+
 
 if __name__ == "__main__":
     main()
