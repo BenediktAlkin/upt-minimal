@@ -5,6 +5,8 @@
 *.JPEG
 *.mp4
 *.pdf
+*.bkp
+*.dtmp
 
 data/
 yamls_run/
