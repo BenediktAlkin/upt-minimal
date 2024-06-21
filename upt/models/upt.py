@@ -3,7 +3,7 @@ import torch
 from torch import nn
 
 
-class UPTSimulation(nn.Module):
+class UPT(nn.Module):
     def __init__(self, conditioner, encoder, approximator, decoder):
         super().__init__()
         self.conditioner = conditioner

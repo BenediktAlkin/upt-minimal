@@ -5,7 +5,7 @@ import torch
 from torch.utils.data import Dataset
 
 
-class SparseCifar10AutoencoderDataset(Dataset):
+class SimulationDataset(Dataset):
     def __init__(
             self,
             root,
