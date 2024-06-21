@@ -52,11 +52,9 @@ def main():
             input_dim=3,
             # CIFAR is an image dataset -> 2D
             ndim=2,
-            # we use positions in [0, 1000] and a ViT with patch_size=4 would have 64 patch tokens
-            # so using 64 supernodes is a reasonable choice (which we will define later in the collator)
-            # when splitting a domain of 1000x1000 into a 8x8 grid, each gridpoint would cover a 125x125 region
-            # since supernodes are randomly distributed and only cover a circular region, we make the radius > 125
-            radius=175,
+            # there are 32x32 pixels so positions are in [0, 31], to have roughly the same input as a ViT
+            # with patch_size=4, we'll use radius slighly larger than 4
+            radius=5,
             # if we split a 32x32 image into 8x8 gridpoints, each point would cover 4x4 pixels, i.e. 16 pixels (=nodes)
             # since we sample supernodes randomly and use a larger radius, it can happen that more than 16 nodes
             # are in the radius of a supernode, so we'll use at maximum 32 connections to each supernode
@@ -134,6 +132,8 @@ def main():
     train_losses = []
     train_accuracies = []
     test_accuracies = []
+    loss = None
+    train_accuracy = None
     for _ in range(epochs):
         # train for an epoch
         model.train()

@@ -37,8 +37,6 @@ class SparseCifar10AutoencoderDataset(CIFAR10):
             torch.stack(torch.meshgrid([torch.arange(32), torch.arange(32)], indexing="ij")),
             "ndim height width -> (height width) ndim",
         )
-        # convert output_pos from [0, 31] to [0, 1000] for better behavior with sin-cos pos embeddings
-        self.output_pos = self.output_pos / 31 * 1000
 
     def __getitem__(self, idx):
         image, _ = super().__getitem__(idx)

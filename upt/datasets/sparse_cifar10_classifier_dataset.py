@@ -3,7 +3,7 @@ import torch
 from torchvision.datasets import CIFAR10
 
 
-class SparseCIFAR10(CIFAR10):
+class SparseCIFAR10ClassifierDataset(CIFAR10):
     def __init__(self, root, num_inputs, train=True, transform=None, download=False):
         super().__init__(
             root=root,
@@ -25,8 +25,6 @@ class SparseCIFAR10(CIFAR10):
             torch.stack(torch.meshgrid([torch.arange(32), torch.arange(32)], indexing="ij")),
             "ndim height width -> (height width) ndim",
         )
-        # convert output_pos from [0, 31] to [0, 1000] for better behavior with sin-cos pos embeddings
-        self.output_pos = self.output_pos / 31 * 1000
 
     def __getitem__(self, idx):
         image, y = super().__getitem__(idx)
