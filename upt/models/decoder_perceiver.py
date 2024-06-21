@@ -18,10 +18,10 @@ class DecoderPerceiver(nn.Module):
             dim,
             depth,
             num_heads,
+            unbatch_mode="dense_to_sparse_unpadded",
             perc_dim=None,
             perc_num_heads=None,
             cond_dim=None,
-            unbatch_mode="sparse",
             init_weights="truncnormal002",
             **kwargs,
     ):
@@ -81,14 +81,7 @@ class DecoderPerceiver(nn.Module):
             LinearProjection(perc_dim, output_dim, init_weights=init_weights),
         )
 
-    def forward(
-            self,
-            x,
-            output_pos,
-            unbatch_idx=None,
-            unbatch_select=None,
-            condition=None,
-    ):
+    def forward(self, x, output_pos, condition=None):
         # check inputs
         assert x.ndim == 3, "expected shape (batch_size, num_latent_tokens, dim)"
         assert output_pos.ndim == 3, "expected shape (batch_size, num_outputs, dim) num_outputs might be padded"
@@ -112,28 +105,14 @@ class DecoderPerceiver(nn.Module):
 
         x = self.perc(q=query, kv=x, **cond_kwargs)
         x = self.pred(x)
-        if self.unbatch_mode == "dense_to_sparse_padded":
-            # dense tensor (batch_size, max_num_points, dim) -> sparse tensor (batch_size * num_points, dim)
-            # dense tensor might be padded
-            x = einops.rearrange(x, "batch_size max_num_points dim -> (batch_size max_num_points) dim")
-            if unbatch_idx is None:
-                # with batch_size=1 no padding is needed --> no unbatching is needed
-                assert len(output_pos) == 1
-            else:
-                # imported here to avoid having to install torch_geometric for images
-                from torch_geometric.utils import unbatch
-                unbatched = unbatch(x, batch=unbatch_idx)
-                x = torch.concat([unbatched[i] for i in unbatch_select])
-        elif self.unbatch_mode == "dense_to_sparse_unpadded":
+        if self.unbatch_mode == "dense_to_sparse_unpadded":
             # dense to sparse where no padding needs to be considered
-            assert unbatch_idx is None and unbatch_select is None
             x = einops.rearrange(
                 x,
                 "batch_size seqlen dim -> (batch_size seqlen) dim",
             )
         elif self.unbatch_mode == "image":
             # rearrange to square image
-            assert unbatch_idx is None and unbatch_select is None
             height = math.sqrt(x.size(1))
             assert height.is_integer()
             x = einops.rearrange(

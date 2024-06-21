@@ -19,7 +19,7 @@ def main():
     device = torch.device("cuda")
 
     # initialize dataset
-    data_root = Path("./data")
+    data_root = Path("../data")
     data_root.mkdir(exist_ok=True)
     transform = ToTensor()
     train_dataset = SparseCifar10AutoencoderDataset(
