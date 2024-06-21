@@ -13,6 +13,7 @@ class DecoderPerceiver(nn.Module):
     def __init__(
             self,
             input_dim,
+            output_dim,
             ndim,
             dim,
             depth,
@@ -28,6 +29,7 @@ class DecoderPerceiver(nn.Module):
         perc_dim = perc_dim or dim
         perc_num_heads = perc_num_heads or num_heads
         self.input_dim = input_dim
+        self.output_dim = output_dim
         self.ndim = ndim
         self.dim = dim
         self.depth = depth
@@ -76,7 +78,7 @@ class DecoderPerceiver(nn.Module):
         self.perc = block_ctor(dim=perc_dim, kv_dim=dim, num_heads=perc_num_heads, init_weights=init_weights)
         self.pred = nn.Sequential(
             nn.LayerNorm(perc_dim, eps=1e-6),
-            LinearProjection(perc_dim, 3, init_weights=init_weights),
+            LinearProjection(perc_dim, output_dim, init_weights=init_weights),
         )
 
     def forward(

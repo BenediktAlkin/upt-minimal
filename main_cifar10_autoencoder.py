@@ -62,6 +62,8 @@ def main():
         decoder=DecoderPerceiver(
             # tell the decoder the dimension of the input (dim of approximator)
             input_dim=dim,
+            # 3 channels for RGB
+            output_dim=3,
             # images have 2D coordinates
             ndim=2,
             # as in ViT-T
@@ -121,6 +123,7 @@ def main():
     train_losses = []
     test_losses = []
     test_loss = float("inf")
+    loss = None
     for _ in range(epochs):
         # train for an epoch
         model.train()
