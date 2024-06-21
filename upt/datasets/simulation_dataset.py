@@ -26,7 +26,12 @@ class SimulationDataset(Dataset):
         self.mode = mode
         # discover simulations
         self.case_names = list(sorted(os.listdir(root)))
-        self.num_timesteps = len(root / self.case_names[0])
+        self.num_timesteps = len(
+            [
+                fname for fname in os.listdir(root / self.case_names[0])
+                if fname.endswith("_mesh.th")
+            ],
+        )
 
     def __len__(self):
         if self.mode == "train":
