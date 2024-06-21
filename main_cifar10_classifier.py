@@ -100,6 +100,8 @@ def main():
     train_losses = []
     train_accuracies = []
     test_accuracies = []
+    loss = None
+    train_accuracy = None
     for _ in range(epochs):
         # train for an epoch
         model.train()
