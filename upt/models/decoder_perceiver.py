@@ -112,8 +112,9 @@ class DecoderPerceiver(nn.Module):
 
         x = self.perc(q=query, kv=x, **cond_kwargs)
         x = self.pred(x)
-        if self.unbatch_mode == "sparse":
+        if self.unbatch_mode == "dense_to_sparse_padded":
             # dense tensor (batch_size, max_num_points, dim) -> sparse tensor (batch_size * num_points, dim)
+            # dense tensor might be padded
             x = einops.rearrange(x, "batch_size max_num_points dim -> (batch_size max_num_points) dim")
             if unbatch_idx is None:
                 # with batch_size=1 no padding is needed --> no unbatching is needed
@@ -123,6 +124,13 @@ class DecoderPerceiver(nn.Module):
                 from torch_geometric.utils import unbatch
                 unbatched = unbatch(x, batch=unbatch_idx)
                 x = torch.concat([unbatched[i] for i in unbatch_select])
+        elif self.unbatch_mode == "dense_to_sparse_unpadded":
+            # dense to sparse where no padding needs to be considered
+            assert unbatch_idx is None and unbatch_select is None
+            x = einops.rearrange(
+                x,
+                "batch_size seqlen dim -> (batch_size seqlen) dim",
+            )
         elif self.unbatch_mode == "image":
             # rearrange to square image
             assert unbatch_idx is None and unbatch_select is None

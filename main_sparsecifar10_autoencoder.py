@@ -8,7 +8,7 @@ from torchvision.transforms import ToTensor
 from tqdm import tqdm
 
 from upt.models.approximator import Approximator
-from upt.models.decoder_classifier import DecoderClassifier
+from upt.models.decoder_perceiver import DecoderPerceiver
 from upt.models.encoder_supernodes import EncoderSupernodes
 from upt.models.upt_sparseimage_classifier import UPTSparseImageClassifier
 from upt.datasets.sparse_cifar10_autoencoder_dataset import SparseCifar10AutoencoderDataset
@@ -83,7 +83,7 @@ def main():
             # ViT-T has 12 blocks -> parameters are split evenly among encoder/approximator/decoder
             depth=4,
         ),
-        decoder=DecoderClassifier(
+        decoder=DecoderPerceiver(
             # tell the decoder the dimension of the input (dim of approximator)
             input_dim=dim,
             # CIFAR10 has 10 classes
@@ -135,6 +135,8 @@ def main():
     train_losses = []
     train_accuracies = []
     test_accuracies = []
+    loss = None
+    train_accuracy = None
     for _ in range(epochs):
         # train for an epoch
         model.train()
