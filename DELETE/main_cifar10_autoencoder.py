@@ -126,7 +126,6 @@ def main():
     loss = None
     for _ in range(epochs):
         # train for an epoch
-        model.train()
         for x, _ in train_dataloader:
             # prepare forward pass
             x = x.to(device)
