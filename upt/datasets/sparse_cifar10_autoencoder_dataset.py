@@ -36,7 +36,7 @@ class SparseCifar10AutoencoderDataset(CIFAR10):
         self.output_pos = einops.rearrange(
             torch.stack(torch.meshgrid([torch.arange(32), torch.arange(32)], indexing="ij")),
             "ndim height width -> (height width) ndim",
-        )
+        ).float()
 
     def __getitem__(self, idx):
         image, _ = super().__getitem__(idx)
