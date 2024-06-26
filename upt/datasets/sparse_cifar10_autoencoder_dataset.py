@@ -3,7 +3,7 @@ import torch
 from torchvision.datasets import CIFAR10
 
 
-class SparseCifar10AutoencoderDataset(CIFAR10):
+class SparseCIFAR10AutoencoderDataset(CIFAR10):
     def __init__(
             self,
             # how many input pixels to sample (<= 1024)
