@@ -49,9 +49,11 @@ class SparseImageAutoencoderCollator:
             cur_batch_idx += 1
         collated_batch["batch_idx"] = batch_idx
 
-        # TODO
-        raise NotImplementedError
         # output_pos
-        # collated_batch["output_pos"] = default_collate([batch[i]["output_pos"] for i in range(len(batch))])
+        collated_batch["output_pos"] = default_collate([batch[i]["output_pos"] for i in range(len(batch))])
+
+        # target_feat to sparse tensor
+        # batch_size * (num_outputs, dim) -> (batch_size * num_outputs, dim)
+        collated_batch["target_feat"] = torch.concat([batch[i]["target_feat"] for i in range(len(batch))])
 
         return collated_batch
