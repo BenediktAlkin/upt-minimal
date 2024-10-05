@@ -48,13 +48,13 @@ class SimulationDataset(Dataset):
             case_idx = idx // (self.num_timesteps - 1)
             timestep = idx % (self.num_timesteps - 1)
             case_uri = self.root / self.case_names[case_idx]
-            x = torch.load(case_uri / "x.th")
-            y = torch.load(case_uri / "y.th")
+            x = torch.load(case_uri / "x.th", weights_only=True).float()
+            y = torch.load(case_uri / "y.th", weights_only=True).float()
             pos = torch.stack([x, y], dim=1)
             input_pos = pos
             output_pos = pos
-            input_feat = torch.load(case_uri / f"{timestep:08d}_mesh.th").T
-            output_feat = torch.load(case_uri / f"{timestep + 1:08d}_mesh.th").T
+            input_feat = torch.load(case_uri / f"{timestep:08d}_mesh.th", weights_only=True).float().T
+            output_feat = torch.load(case_uri / f"{timestep + 1:08d}_mesh.th", weights_only=True).float().T
             # subsample inputs
             if self.num_inputs != float("inf"):
                 input_perm = torch.randperm(len(input_feat))[:self.num_inputs]
@@ -71,12 +71,15 @@ class SimulationDataset(Dataset):
             assert self.num_outputs == float("inf")
             timestep = 0
             case_uri = self.root / self.case_names[idx]
-            x = torch.load(case_uri / "x.th")
-            y = torch.load(case_uri / "y.th")
+            x = torch.load(case_uri / "x.th", weights_only=True).float()
+            y = torch.load(case_uri / "y.th", weights_only=True).float()
             pos = torch.stack([x, y], dim=1)
             input_pos = pos
             output_pos = pos
-            data = [torch.load(case_uri / f"{i:08d}_mesh.th").T for i in range(self.num_timesteps)]
+            data = [
+                torch.load(case_uri / f"{i:08d}_mesh.th", weights_only=True).float().T
+                for i in range(self.num_timesteps)
+            ]
             input_feat = data[0]
             output_feat = data[1:]
         else:
