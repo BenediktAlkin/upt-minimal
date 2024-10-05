@@ -7,11 +7,10 @@ from tqdm import tqdm
 from upt.collators.simulation_collator import SimulationCollator
 from upt.datasets.simulation_dataset import SimulationDataset
 from upt.models.approximator import Approximator
-from upt.models.conditioner_timestep import ConditionerTimestep
 from upt.models.decoder_perceiver import DecoderPerceiver
 from upt.models.encoder_supernodes import EncoderSupernodes
+from upt.models.conditioner_timestep import ConditionerTimestep
 from upt.models.upt import UPT
-
 
 def main():
     # initialize device
@@ -177,6 +176,7 @@ def main():
             pbar.set_description(f"train_loss: {loss.item():.6f}")
             train_losses.append(loss.item())
 
+
     test_batch = next(iter(rollout_dataloader))
     rollout_preds = model.rollout(
         input_feat=test_batch["input_feat"].to(device),
@@ -220,6 +220,7 @@ def main():
         pred = pred.norm(dim=1)
         target = target.norm(dim=1)
 
+
         # format
         for ii in range(3):
             rect = patches.Rectangle((0, 0), 200, 300, facecolor="#ee8866", zorder=-10)
@@ -248,8 +249,9 @@ def main():
         imageio.imread(out / f"{i:04d}.png")
         for i in range(num_rollout_timesteps)
     ]
-    imageio.mimsave(out / "rollout.gif", images)
-    
+    imageio.mimsave(out / "rollout.gif", images, duration=0.1)
+
+
 
 if __name__ == "__main__":
     main()
