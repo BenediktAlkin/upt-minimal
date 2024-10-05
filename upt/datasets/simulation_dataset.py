@@ -53,8 +53,8 @@ class SimulationDataset(Dataset):
             pos = torch.stack([x, y], dim=1)
             input_pos = pos
             output_pos = pos
-            input_feat = torch.load(case_uri / f"{timestep:08d}_mesh.th")
-            output_feat = torch.load(case_uri / f"{timestep + 1:08d}_mesh.th")
+            input_feat = torch.load(case_uri / f"{timestep:08d}_mesh.th").T
+            output_feat = torch.load(case_uri / f"{timestep + 1:08d}_mesh.th").T
             # subsample inputs
             if self.num_inputs != float("inf"):
                 input_perm = torch.randperm(len(x))[:self.num_inputs]
@@ -69,21 +69,26 @@ class SimulationDataset(Dataset):
             # return all timesteps
             assert self.num_inputs == float("inf")
             assert self.num_outputs == float("inf")
-            case_idx = self.case_names[idx]
             timestep = 0
-            case_uri = self.root / self.case_names[case_idx]
+            case_uri = self.root / self.case_names[idx]
             x = torch.load(case_uri / "x.th")
             y = torch.load(case_uri / "y.th")
             pos = torch.stack([x, y], dim=1)
             input_pos = pos
             output_pos = pos
-            data = [torch.load(case_uri / f"{i:08d}_mesh.th") for i in range(self.num_timesteps)]
+            data = [torch.load(case_uri / f"{i:08d}_mesh.th").T for i in range(self.num_timesteps)]
             input_feat = data[0]
             output_feat = data[1:]
         else:
             raise NotImplementedError
 
+        # scale x positions from [-0.5, 0.5] to [0-200]
+        # scale y positions from [-0.5, 1] to [0-300]
+        input_pos = (input_pos + 0.5) * 200
+        output_pos = (output_pos + 0.5) * 200
+
         return dict(
+            index=idx,
             input_feat=input_feat,
             input_pos=input_pos,
             output_feat=output_feat,

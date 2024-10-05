@@ -10,11 +10,11 @@ from upt.models.approximator import Approximator
 from upt.models.decoder_perceiver import DecoderPerceiver
 from upt.models.encoder_supernodes import EncoderSupernodes
 from upt.models.conditioner_timestep import ConditionerTimestep
-
+from upt.models.upt import UPT
 
 def main():
     # initialize device
-    device = torch.device("cuda")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
     # initialize dataset
     train_dataset = SimulationDataset(
@@ -33,14 +33,14 @@ def main():
         # use all outputs for rollout
         num_outputs=float("inf"),
         # mode
-        mode="train",
+        mode="rollout",
     )
 
     # hyperparameters
     dim = 192  # ~6M parameter model
     num_heads = 3
-    epochs = 10
-    batch_size = 256
+    epochs = 100
+    batch_size = 19
 
     # initialize model
     model = UPT(
@@ -111,9 +111,9 @@ def main():
     )
     rollout_dataloader = DataLoader(
         dataset=rollout_dataset,
-        batch_size=batch_size,
-        shuffle=True,
-        drop_last=True,
+        batch_size=1,
+        shuffle=False,
+        drop_last=False,
         collate_fn=SimulationCollator(num_supernodes=512, deterministic=True),
     )
 
@@ -167,6 +167,94 @@ def main():
             pbar.update()
             pbar.set_description(f"train_loss: {loss.item():.4f}")
             train_losses.append(loss.item())
+
+
+    test_batch = next(iter(rollout_dataloader))
+    rollout_preds = model.rollout(
+        input_feat=test_batch["input_feat"].to(device),
+        input_pos=test_batch["input_pos"].to(device),
+        supernode_idxs=test_batch["supernode_idxs"].to(device),
+        batch_idx=test_batch["batch_idx"].to(device),
+    )
+    rollout_preds = [rollout_preds[i].cpu() for i in range(len(rollout_preds))]
+
+    from pathlib import Path
+    out = Path("tmp")
+    if out.exists():
+        import shutil
+        shutil.rmtree(out)
+    out.mkdir()
+    assert len(test_batch["output_feat"]) == 1, "batch_size > 1 not supported for rollout"
+    output_feat = test_batch["output_feat"][0]
+    num_rollout_timesteps = len(output_feat)
+
+    from matplotlib import patches
+
+    import os
+    if os.name == "nt":
+        os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
+    x, y = test_batch["input_pos"].unbind(1)
+    for i in tqdm(range(num_rollout_timesteps)):
+        plt.clf()
+        fig = plt.figure(figsize=(30, 10))
+        # needed to force correct aspect ratio
+        positions = [
+            [0.05, 0.1, 0.3, 0.8],
+            [0.4, 0.1, 0.3, 0.8],
+            [0.7, 0.1, 0.3, 0.8],
+        ]
+        ax = [fig.add_axes(pos) for pos in positions]
+
+        # plot only velocity magnitude
+        pred = rollout_preds[i][:, 1:]
+        target = output_feat[i][:, 1:]
+        delta = (pred - target).norm(dim=1)
+        pred = pred.norm(dim=1)
+        target = target.norm(dim=1)
+
+
+        # format
+        for ii in range(3):
+            rect = patches.Rectangle((0, 0), 200, 300, facecolor="#ee8866", zorder=-10)
+            ax[ii].add_patch(rect)
+            ax[ii].set_axis_off()
+            ax[ii].set_xlim(5, 295)
+            ax[ii].set_ylim(5, 195)
+            ax[ii].set_aspect(1.0)
+        # plot displacement (plot with large pointsize first to fill whole area, then with small one for details)
+        for point_size in [20, 4]:
+            ax[0].scatter(x, y, c=target, s=point_size, cmap="bone")
+            scatter1 = ax[1].scatter(x, y, c=pred, s=point_size, cmap="bone")
+            scatter2 = ax[2].scatter(x, y, c=delta, s=point_size, cmap="bone", vmin=0)
+        ax[0].set_title("target")
+        ax[1].set_title("prediction")
+        ax[2].set_title("delta")
+        plt.colorbar(scatter1, ax=[ax[0], ax[1]], orientation="vertical")
+        plt.colorbar(scatter2, ax=ax[2], orientation="vertical")
+        # save
+        plt.savefig(out / f"{i:04d}.png")
+        plt.close()
+
+    # create gif
+    from PIL import Image
+    def load_pil(uri):
+        temp = Image.open(uri)
+        img = temp.copy()
+        temp.close()
+        return img
+
+    imgs = [
+        load_pil(out / f"{i:04d}.png")
+        for i in range(num_rollout_timesteps)
+    ]
+    imgs[0].save(
+        fp=out / f"rollout.gif",
+        format="GIF",
+        append_images=imgs[1:],
+        save_all=True,
+        duration=100,
+        loop=0,
+    )
 
 
 

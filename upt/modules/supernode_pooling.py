@@ -2,8 +2,8 @@ import einops
 import torch
 from kappamodules.layers import ContinuousSincosEmbed, LinearProjection
 from torch import nn
-from torch_geometric.nn.pool import radius_graph
-from torch_scatter import segment_csr
+# from torch_geometric.nn.pool import radius_graph
+# from torch_scatter import segment_csr
 
 
 class SupernodePooling(nn.Module):
