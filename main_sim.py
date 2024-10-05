@@ -37,7 +37,7 @@ def main():
     )
 
     # hyperparameters
-    dim = 192
+    dim = 768
     num_heads = 3
     epochs = 1000
     batch_size = 19
