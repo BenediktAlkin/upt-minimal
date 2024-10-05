@@ -92,11 +92,16 @@ class SimulationDataset(Dataset):
         input_pos = (input_pos + 0.5) * 200
         output_pos = (output_pos + 0.5) * 200
 
-        # normalize + logscale
+        # normalize
         input_feat -= self.mean.unsqueeze(0)
         input_feat /= self.std.unsqueeze(0)
-        output_feat -= self.mean.unsqueeze(0)
-        output_feat /= self.std.unsqueeze(0)
+        if isinstance(output_feat, list):
+            for i in range(len(output_feat)):
+                output_feat[i] -= self.mean.unsqueeze(0)
+                output_feat[i] /= self.std.unsqueeze(0)
+        else:
+            output_feat -= self.mean.unsqueeze(0)
+            output_feat /= self.std.unsqueeze(0)
 
         return dict(
             index=idx,
