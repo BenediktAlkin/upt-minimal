@@ -57,14 +57,14 @@ class SimulationDataset(Dataset):
             output_feat = torch.load(case_uri / f"{timestep + 1:08d}_mesh.th").T
             # subsample inputs
             if self.num_inputs != float("inf"):
-                input_perm = torch.randperm(len(x))[:self.num_inputs]
+                input_perm = torch.randperm(len(input_feat))[:self.num_inputs]
                 input_feat = input_feat[input_perm]
                 input_pos = input_pos[input_perm]
             # subsample outputs
             if self.num_outputs != float("inf"):
-                output_perm = torch.randperm(len(x))[:self.num_outputs]
-                output_feat = input_feat[output_perm]
-                output_pos = input_pos[output_perm]
+                output_perm = torch.randperm(len(output_feat))[:self.num_outputs]
+                output_feat = output_feat[output_perm]
+                output_pos = output_pos[output_perm]
         elif self.mode == "rollout":
             # return all timesteps
             assert self.num_inputs == float("inf")
