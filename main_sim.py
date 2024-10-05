@@ -73,7 +73,7 @@ def main():
             perc_num_heads=num_heads,
             num_latent_tokens=128,
             # pass conditioner dim
-            cond_dim=self.conditioenr.cond_dim,
+            cond_dim=conditioenr.cond_dim,
         ),
         approximator=Approximator(
             # tell the approximator the dimension of the input (perc_dim or enc_dim of encoder)
@@ -84,7 +84,7 @@ def main():
             # ViT-T has 12 blocks -> parameters are split evenly among encoder/approximator/decoder
             depth=4,
             # pass conditioner dim
-            cond_dim=self.conditioenr.cond_dim,
+            cond_dim=conditioenr.cond_dim,
         ),
         decoder=DecoderPerceiver(
             # tell the decoder the dimension of the input (dim of approximator)
@@ -101,7 +101,7 @@ def main():
             # we assume num_outputs to be constant so we can simply reshape the dense result into a sparse tensor
             unbatch_mode="dense_to_sparse_unpadded",
             # pass conditioner dim
-            cond_dim=self.conditioenr.cond_dim,
+            cond_dim=conditioenr.cond_dim,
         ),
     )
     model = model.to(device)
