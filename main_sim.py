@@ -187,6 +187,7 @@ def main():
     rollout_preds = [rollout_preds[i].cpu() for i in range(len(rollout_preds))]
 
     from pathlib import Path
+    from matplotlib import patches
     out = Path("tmp")
     if out.exists():
         import shutil
@@ -196,7 +197,6 @@ def main():
     output_feat = test_batch["output_feat"][0]
     num_rollout_timesteps = len(output_feat)
 
-    from matplotlib import patches
 
     import os
     if os.name == "nt":
