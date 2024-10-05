@@ -7,12 +7,13 @@ class ConditionerTimestep(nn.Module):
         super().__init__()
         self.num_timesteps = num_timesteps
         self.dim = dim
+        self.cond_dim = dim * 4
         self.register_buffer(
             "timestep_embed",
             get_sincos_1d_from_seqlen(seqlen=num_timesteps, dim=dim),
         )
         self.mlp = nn.Sequential(
-            nn.Linear(dim, dim),
+            nn.Linear(dim, self.cond_dim),
             nn.SiLU(),
         )
 
