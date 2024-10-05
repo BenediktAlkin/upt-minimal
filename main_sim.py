@@ -151,6 +151,7 @@ def main():
                 supernode_idxs=batch["supernode_idxs"].to(device),
                 batch_idx=batch["batch_idx"].to(device),
                 output_pos=batch["output_pos"].to(device),
+                timestep=batch["timestep"].to(device),
             )
             y = batch["output_feat"].to(device)
             loss = F.mse_loss(y_hat, y)
