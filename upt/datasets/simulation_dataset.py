@@ -32,6 +32,8 @@ class SimulationDataset(Dataset):
                 if fname.endswith("_mesh.th")
             ],
         )
+        self.mean = torch.tensor([0.0152587890625, -1.7881393432617188e-06, 0.0003612041473388672])
+        self.std = torch.tensor([0.0233612060546875, 0.0184173583984375, 0.0019378662109375])
 
     def __len__(self):
         if self.mode == "train":
@@ -89,6 +91,12 @@ class SimulationDataset(Dataset):
         # scale y positions from [-0.5, 1] to [0-300]
         input_pos = (input_pos + 0.5) * 200
         output_pos = (output_pos + 0.5) * 200
+
+        # normalize + logscale
+        input_feat -= self.mean.unsqueeze(0)
+        input_feat /= self.std.unsqueeze(0)
+        output_feat -= self.mean.unsqueeze(0)
+        output_feat /= self.std.unsqueeze(0)
 
         return dict(
             index=idx,
