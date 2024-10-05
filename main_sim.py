@@ -37,7 +37,7 @@ def main():
     )
 
     # hyperparameters
-    dim = 768
+    dim = 192
     num_heads = 3
     epochs = 1000
     batch_size = 19
@@ -231,9 +231,9 @@ def main():
             ax[ii].set_aspect(1.0)
         # plot displacement (plot with large pointsize first to fill whole area, then with small one for details)
         for point_size in [20, 4]:
-            ax[0].scatter(x, y, c=target, s=point_size, cmap="bone")
-            scatter1 = ax[1].scatter(x, y, c=pred, s=point_size, cmap="bone")
-            scatter2 = ax[2].scatter(x, y, c=delta, s=point_size, cmap="bone", vmin=0)
+            ax[0].scatter(x, y, c=target, s=point_size, cmap="bone", vmin=0, vmax=2.5)
+            scatter1 = ax[1].scatter(x, y, c=pred, s=point_size, cmap="bone", vmin=0, vmax=2.5)
+            scatter2 = ax[2].scatter(x, y, c=delta, s=point_size, cmap="bone", vmin=0, vmax=0.4)
         ax[0].set_title("target")
         ax[1].set_title("prediction")
         ax[2].set_title("delta")
@@ -247,7 +247,7 @@ def main():
     from PIL import Image
     def load_pil(uri):
         temp = Image.open(uri)
-        img = temp.copy()
+        img = temp.copy().convert("RGBA")
         temp.close()
         return img
 
