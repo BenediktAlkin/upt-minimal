@@ -39,7 +39,7 @@ def main():
     # hyperparameters
     dim = 192  # ~6M parameter model
     num_heads = 3
-    epochs = 100
+    epochs = 1000
     batch_size = 19
 
     # initialize model
@@ -141,7 +141,7 @@ def main():
     update = 0
     pbar = tqdm(total=total_updates)
     pbar.update(0)
-    pbar.set_description("train_loss: ?????")
+    pbar.set_description("train_loss: ???????")
     train_losses = []
     for _ in range(epochs):
         # train for an epoch
@@ -173,7 +173,7 @@ def main():
             # status update
             update += 1
             pbar.update()
-            pbar.set_description(f"train_loss: {loss.item():.4f}")
+            pbar.set_description(f"train_loss: {loss.item():.6f}")
             train_losses.append(loss.item())
 
 

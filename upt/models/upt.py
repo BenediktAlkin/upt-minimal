@@ -56,7 +56,7 @@ class UPT(nn.Module):
             batch_size=batch_size,
         )
 
-        predictions = [input_feat]
+        predictions = []
         for i in range(self.conditioner.num_timesteps):
             condition = self.conditioner(timestep)
             # encode data
